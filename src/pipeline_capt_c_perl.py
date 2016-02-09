@@ -300,12 +300,13 @@ def mapReadsWithBowtie(infiles, outfile):
     
     genome = PARAMS["environment_bowtiegenome"]
     
+    align_command = PARAMS["bowtie_options"]
+    
     job_memory = "4G"
         
     log_file = P.snip(outfile, ".sam") + ".log"
  
-    statement = '''bowtie -p 1 -m 2 --best 
-    --strata --sam --chunkmb 256 
+    statement = '''bowtie %(align_command)s 
     --sam %(genome)s 
     %(infiles)s 
     %(outfile)s 2> %(log_file)s'''

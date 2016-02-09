@@ -41,6 +41,18 @@ genome_dir=/shared/sudlab1/General/mirror/genomes/index
 enzyme=DpnII
 
 
+################################################################
+#
+# bowtie options
+#
+################################################################
+[bowtie]
+
+# Dont include here --sam file_name or other output files
+# --sam is allowed by itself to indicate sam input
+options=-p 1 -m 2 --best --strata --sam --chunkmb 256
+
+
 
 ################################################################
 #
@@ -55,6 +67,10 @@ perlscripts=/home/mbp15ja/dev/Capture_c_perl/
 
 bowtiegenome=/shared/sudlab1/General/mirror/genomes/bowtie/hg19
 
+contigs=/shared/sudlab1/General/annotations/hg19_ensembl75/contigs.tsv
+
+#If this parameter is changed, the parameter $bigwig_folder in CCanalyser3.pl has to be changed accordingly
+tempcontigs=/mnt/fastdata/mbp15ja/tmp
 
 ################################################################
 #
@@ -65,7 +81,7 @@ bowtiegenome=/shared/sudlab1/General/mirror/genomes/bowtie/hg19
 database=/ifs/data/annotations/hg19_ensembl62/csvdb
 
 # directory with annotation information
-dir=
+dir=/shared/sudlab1/General/annotations/hg19_ensembl75
 
 ################################################################
 #
