@@ -93,6 +93,7 @@ Code
 
 """
 from ruffus import *
+from ruffus.combinatorics import *
 
 import sys
 import os
@@ -100,10 +101,11 @@ import sqlite3
 import CGAT.Experiment as E
 import CGATPipelines.Pipeline as P
 import pipelineCaptCPerl
+import numpy
 import sys
 sys.path.insert(0, '/home/mbp15ja/dev/Capture_C/Capture_C')
-
 import PipelineCaptureC
+
 
 
 # load options from the config file
@@ -123,6 +125,7 @@ PARAMS.update(P.peekParameters(
     on_error_raise=__name__ == "__main__",
     prefix="annotations_",
     update_interface=True))
+
 
 
 # if necessary, update the PARAMS dictionary in any modules file.
@@ -186,8 +189,82 @@ def connect():
 
 
 ###############################################################################
-@follows(mkdir("flashed.dir"))
+@active_if(PARAMS["addtests_saturation"] == 1)
+@follows(mkdir("saturation_analysis.dir"))
+@originate( ["saturation_analysis.dir/%s.sample" % percentage for percentage in
+            numpy.arange(PARAMS["saturationanlysis_min"],
+                         PARAMS["saturationanlysis_max"] + 1,
+                         PARAMS["saturationanlysis_step"])])                         
+def generateSaturationAnalysis(outfile):
+    
+    statement = ''' touch %(outfile)s '''
+    
+    P.run()
+
+
+
+
+###############################################################################
+# Generate all the combinations of reads and sample sizes
+@active_if(PARAMS["addtests_saturation"] == 1)
+@product(SEQUENCEFILES,
+          SEQUENCEFILES_REGEX,
+          generateSaturationAnalysis,
+          formatter("(.sample)$"),
+          r"saturation_analysis.dir/{basename[1][0]}_{basename[0][0]}.gz",
+          "{basename[1][0]}")
+def generateReadSamplesProduct(infile, outfile, sample_size):
+    
+    percentage_sample = float(float(int(sample_size)) / 100)
+    
+    
+    read1_in = infile[0]
+    read2_in = P.snip(infile[0], ".fastq.1.gz") + ".fastq.2.gz"
+    
+    outnamebasef1 = outfile
+    outnamebasef2 = P.snip(outfile, ".fastq.1.gz") + ".fastq.2.gz"
+    
+    log_filename = P.snip(outfile, ".fastq.1.gz") + ".log"    
+    
+    statement = ''' python %(scriptsdir)s/fastq2fastq.py --stdin=%(read1_in)s  
+                --method=sample --sample-size=%(percentage_sample)s --seed=1234 
+                --log=%(log_filename)s --pair-fastq-file=%(read2_in)s 
+                -F --output-filename-pattern=%(outnamebasef2)s -v 7 -S %(outnamebasef1)s '''
+     
+    P.run()
+    
+    
+
+
+
+###############################################################################
+# If no saturation test defined, just copy the symlinks to saturation_analysis.dir as 100 sample
+@active_if(PARAMS["addtests_saturation"] == 0)
+@follows(mkdir("saturation_analysis.dir"))
 @transform(SEQUENCEFILES,
+           SEQUENCEFILES_REGEX,
+           r"saturation_analysis.dir/100_\1.fastq.1.gz")
+def relocateReads(infiles, outfile):
+    
+    
+    
+    # Move both reads of the pair
+    read2_in = P.snip(infiles, ".fastq.1.gz") + ".fastq.2.gz"
+    
+    read2_out = P.snip(outfile, ".fastq.1.gz") + ".fastq.2.gz"
+    
+    statement = '''cp -d %(infiles)s %(outfile)s;
+                cp -d %(read2_in)s %(read2_out)s;
+                '''
+    
+    P.run()
+    
+   
+
+
+###############################################################################
+@follows(mkdir("flashed.dir"))
+@transform([generateReadSamplesProduct, relocateReads],
            SEQUENCEFILES_REGEX,
            r"flashed.dir/\1.extendedFrags.fastq.gz")
 def flashReads(infiles, outfile):
