@@ -606,7 +606,7 @@ def analyzeInteractions(infile, outfile):
     # Mv .bw to analysis.dir
     statement = ''' if [ ! -f %(perl_script_base_name)s ]; then
                         cp %(perl_scripts)s .;
-                    fi
+                    fi;
                     %(perl)s %(perl_script_base_name)s -f 
                     %(full_mapped_RE_reads)s 
                     -r %(full_digest_genome)s
