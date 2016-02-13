@@ -604,7 +604,9 @@ def analyzeInteractions(infile, outfile):
     
     # Copy the script to the base directory first
     # Mv .bw to analysis.dir
-    statement = ''' cp %(perl_scripts)s .;
+    statement = ''' if [ ! -f %(perl_script_base_name)s ]; then
+                        cp %(perl_scripts)s .;
+                    fi
                     %(perl)s %(perl_script_base_name)s -f 
                     %(full_mapped_RE_reads)s 
                     -r %(full_digest_genome)s
