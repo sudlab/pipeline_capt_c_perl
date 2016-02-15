@@ -215,15 +215,17 @@ def generateSaturationAnalysis(outfile):
 
 
 
+
+
 ###############################################################################
 # Generate all the combinations of reads and sample sizes
 @active_if(PARAMS["addtests_saturation"] == 1)
 @product(SEQUENCEFILES,
-          SEQUENCEFILES_REGEX,
+          formatter(".+/(?P<CELL_LINE>.+).fastq.1.gz"),
           generateSaturationAnalysis,
-          formatter("(.sample_sat_analysis)$"),
-          r"saturation_analysis.dir/Sample_{basename[1][0]}_{basename[0][0]}.gz",
-          "{basename[1][0]}")
+          formatter(".+/(?P<SAMPLE_SIZE>.+).sample_sat_analysis"),
+          "saturation_analysis.dir/Sample_{SAMPLE_SIZE[1][0]}_{CELL_LINE[0][0]}.fastq.1.gz",
+          "{SAMPLE_SIZE[1][0]}")
 def generateReadSamplesProduct(infile, outfile, sample_size):
     
     percentage_sample = float(float(int(sample_size)) / 100)
@@ -287,8 +289,7 @@ def generateFlashingAnalysis(outfile):
   
 
 
-formatter(".+/job(?P<JOBNUMBER>\d+).a.start",  # Extract job number
-                      ".+/job[123].b.start") 
+
 
 # Generate all the combinations of input reads and minimum overlap lengths
 ###############################################################################
