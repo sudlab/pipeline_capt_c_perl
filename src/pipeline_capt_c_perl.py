@@ -253,8 +253,10 @@ def relocateReads(infiles, outfile):
     
     read2_out = P.snip(outfile, ".fastq.1.gz") + ".fastq.2.gz"
     
-    statement = '''cp -d %(infiles)s %(outfile)s;
-                cp -d %(read2_in)s %(read2_out)s;
+    # Copy first the second read pair and checkpoint to return the exit code.
+    statement = '''cp -d %(read2_in)s %(read2_out)s;
+                checkpoint;
+                cp -d %(infiles)s %(outfile)s;
                 '''
     
     P.run()
