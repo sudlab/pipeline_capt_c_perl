@@ -191,7 +191,7 @@ def connect():
 ###############################################################################
 @active_if(PARAMS["addtests_saturation"] == 1)
 @follows(mkdir("saturation_analysis.dir"))
-@originate( ["saturation_analysis.dir/%s.sample" % percentage for percentage in
+@originate( ["saturation_analysis.dir/%s.sample_sat_analysis" % percentage for percentage in
             numpy.arange(PARAMS["saturationanlysis_min"],
                          PARAMS["saturationanlysis_max"] + 1,
                          PARAMS["saturationanlysis_step"])])                         
@@ -210,8 +210,8 @@ def generateSaturationAnalysis(outfile):
 @product(SEQUENCEFILES,
           SEQUENCEFILES_REGEX,
           generateSaturationAnalysis,
-          formatter("(.sample)$"),
-          r"saturation_analysis.dir/{basename[1][0]}_{basename[0][0]}.gz",
+          formatter("(.sample_sat_analysis)$"),
+          r"saturation_analysis.dir/Sample_{basename[1][0]}_{basename[0][0]}.gz",
           "{basename[1][0]}")
 def generateReadSamplesProduct(infile, outfile, sample_size):
     
@@ -243,7 +243,7 @@ def generateReadSamplesProduct(infile, outfile, sample_size):
 @follows(mkdir("saturation_analysis.dir"))
 @transform(SEQUENCEFILES,
            SEQUENCEFILES_REGEX,
-           r"saturation_analysis.dir/100_\1.fastq.1.gz")
+           r"saturation_analysis.dir/Sample_100_\1.fastq.1.gz")
 def relocateReads(infiles, outfile):
     
     
@@ -260,16 +260,43 @@ def relocateReads(infiles, outfile):
                 '''
     
     P.run()
-    
+
+
+
+# Creates overlap sizes according to the ini file, if no flash analysis
+# is specified, creates a default overlap size of 10 
+###############################################################################
+@follows(mkdir("flashing_analysis.dir"))
+@originate( ["flashing_analysis.dir/%s.sample_flash_analysis" % overlap for overlap in
+            numpy.arange(PARAMS["flashinganlysis_min"],
+                         PARAMS["flashinganlysis_max"] + 1,
+                         PARAMS["flashinganlysis_step"])]
+           if (PARAMS["addtests_flashing"] == 1)
+           else "flashing_analysis.dir/10.sample_flash_analysis")                         
+def generateFlashingAnalysis(outfile):
+     
+    statement = ''' touch %(outfile)s '''
+     
+    P.run()     
    
+   
+   
+  
 
 
+formatter(".+/job(?P<JOBNUMBER>\d+).a.start",  # Extract job number
+                      ".+/job[123].b.start") 
+
+# Generate all the combinations of input reads and minimum overlap lengths
 ###############################################################################
 @follows(mkdir("flashed.dir"))
-@transform([generateReadSamplesProduct, relocateReads],
-           SEQUENCEFILES_REGEX,
-           r"flashed.dir/\1.extendedFrags.fastq.gz")
-def flashReads(infiles, outfile):
+@product([generateReadSamplesProduct, relocateReads],
+         formatter(".+/(?P<CELL_LINE>.+).fastq.1.gz"),
+         generateFlashingAnalysis,
+         formatter(".+/(?P<OVERLAP_FLASH>.+).sample_flash_analysis"),
+         "flashed.dir/Overlap_{OVERLAP_FLASH[1][0]}_{CELL_LINE[0][0]}.extendedFrags.fastq.gz",
+         "{OVERLAP_FLASH[1][0]}")
+def flashReads(infiles, outfile, overlap):
     ''' Flashes read pairs'''
     
     job_memory = "2G"
@@ -277,15 +304,17 @@ def flashReads(infiles, outfile):
     # Use one thread to maintain read order
     job_threads = 1
     
-    read1 = infiles
-    read2 = P.snip(infiles, ".fastq.1.gz") + ".fastq.2.gz"
+    # Retrieve the input file from [generateReadSamplesProduct, relocateReads]
+    read1 = infiles[0]
     
+    
+    read2 = P.snip(read1, ".fastq.1.gz") + ".fastq.2.gz"
     
     
     outfilebase = P.snip(outfile, ".extendedFrags.fastq.gz")   
     
     
-    statement = '''flash --interleaved-output %(read1)s 
+    statement = '''flash -m %(overlap)s --interleaved-output %(read1)s 
     %(read2)s -o %(outfilebase)s -z ;
     checkpoint;
     touch %(outfile)s'''
