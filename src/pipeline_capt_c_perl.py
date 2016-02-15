@@ -160,6 +160,17 @@ SEQUENCEFILES = tuple([os.path.join(".", suffix_name)
 SEQUENCEFILES_REGEX = regex(
     r".*/(\S+).(fastq.1.gz|fastq.gz|fa.gz|sra|csfasta.gz|csfasta.F3.gz|export.txt.gz)")
 
+
+SEQUENCESUFFIXES_PAIRS = ("*.fastq.1.gz",
+                    "*.fastq.2.gz",
+                    )
+
+SEQUENCEFILES_PAIRS = tuple([os.path.join(".", suffix_name)
+                      for suffix_name in SEQUENCESUFFIXES_PAIRS])
+
+
+
+
 ###################################################################
 ###################################################################
 
@@ -241,21 +252,13 @@ def generateReadSamplesProduct(infile, outfile, sample_size):
 # If no saturation test defined, just copy the symlinks to saturation_analysis.dir as 100 sample
 @active_if(PARAMS["addtests_saturation"] == 0)
 @follows(mkdir("saturation_analysis.dir"))
-@transform(SEQUENCEFILES,
-           SEQUENCEFILES_REGEX,
-           r"saturation_analysis.dir/Sample_100_\1.fastq.1.gz")
+@transform(SEQUENCEFILES_PAIRS,
+           formatter(".+/(?P<CELL_LINE>.+).fastq.(?P<PAIR>\d+).gz"),
+           "saturation_analysis.dir/Sample_100_{CELL_LINE[0]}.fastq.{PAIR[0]}.gz")
 def relocateReads(infiles, outfile):
     
     
-    
-    # Move both reads of the pair
-    read2_in = P.snip(infiles, ".fastq.1.gz") + ".fastq.2.gz"
-    
-    read2_out = P.snip(outfile, ".fastq.1.gz") + ".fastq.2.gz"
-    
-    # Copy first the second read pair and checkpoint to return the exit code.
-    statement = '''cp -d %(read2_in)s %(read2_out)s;
-                checkpoint;
+    statement = '''
                 cp -d %(infiles)s %(outfile)s;
                 '''
     
