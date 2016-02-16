@@ -402,17 +402,52 @@ def perlDigestGenome(infiles, outfile):
     
 
 
+# Generates mapping experiments to use -v mode in bowtie,
+# with mismatches for the whole alignment ranging from 0 through 3
+# Creates default file if the mapping test is not defined
+@follows(mkdir("mapping_analysis.dir"))
+@originate( ["mapping_analysis.dir/%s.sample_map_analysis" % mismatch for mismatch in
+            numpy.arange(0, 4, 1)]
+           if(PARAMS["addtests_mapping"] == 1) 
+           else "mapping_analysis.dir/default.sample_map_analysis")              
+def generateMappingAnalysis(outfile):
+    
+    statement = ''' touch %(outfile)s '''
+    
+    P.run()
+
+
+
+
+
+
+
+
+
+
 ##############################################################################
 @follows(mkdir("bowtie.dir"))
-@transform(digestFlashedReads,
-           regex(".+/(.+)_combined_REdig.fastq"),
-           r"bowtie.dir/\1.bowtie.sam")
-def mapReadsWithBowtie(infiles, outfile):
+@product(digestFlashedReads,
+         formatter(".+/(?P<READ>.+)_combined_REdig.fastq"),
+         generateMappingAnalysis,
+         formatter(".+/(?P<MISMATCHES>.+).sample_map_analysis"),
+         "bowtie.dir/mismatches_{MISMATCHES[1][0]}_{READ[0][0]}.bowtie.sam",
+         "{MISMATCHES[1][0]}")
+def mapReadsWithBowtie(infiles, outfile, mismatches):
     ''' Aligns the digested reads to the genome '''
     
-    genome = PARAMS["environment_bowtiegenome"]
+    # If mapping analysis is not defined, use user specified parameters
+    if (PARAMS["addtests_mapping"] == 0):
+        align_command = PARAMS["bowtie_options"]
+    else:
+        align_command = "-v " +mismatches+" -p 1 -m 2 --best --strata --sam --chunkmb 256"
     
-    align_command = PARAMS["bowtie_options"]
+    
+    # Obtain the reads
+    reads = infiles[0]
+    
+    
+    genome = PARAMS["environment_bowtiegenome"]
     
     job_memory = "4G"
         
@@ -420,7 +455,7 @@ def mapReadsWithBowtie(infiles, outfile):
  
     statement = '''bowtie %(align_command)s 
     --sam %(genome)s 
-    %(infiles)s 
+    %(reads)s 
     %(outfile)s 2> %(log_file)s'''
  
     P.run()

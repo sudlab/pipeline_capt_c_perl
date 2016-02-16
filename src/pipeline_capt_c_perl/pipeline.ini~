@@ -72,6 +72,17 @@ database=/ifs/data/annotations/hg19_ensembl62/csvdb
 dir=/shared/sudlab1/General/annotations/hg19_ensembl75
 
 
+################################################################
+#
+# Bowtie parameters
+#
+################################################################
+[bowtie]
+
+# Dont include here --sam file_name or other output files
+# --sam is allowed by itself to indicate sam input
+options=-p 1 -m 2 --best --strata --sam --chunkmb 256
+
 
 ################################################################
 #
@@ -83,6 +94,11 @@ dir=/shared/sudlab1/General/annotations/hg19_ensembl75
 # Defines whether to do a saturation analysis (0 -> no saturation analysis, 1 -> saturation analysis)
 saturation=1
 
+# Defines whether to do a flashing analysis (0 -> no flashing analysis, 1 -> flashing analysis)
+flashing=1
+
+# Defines whether to do a mapping analysis (0 -> no mapping analysis, 1 -> mapping analysis)
+mapping=1
 
 
 ################################################################
@@ -101,6 +117,41 @@ max=100
 # Step
 step=10
 
+
+
+################################################################
+#
+# Define parameters for flashing analysis
+#
+################################################################
+[flashinganlysis]
+
+# Minimum overlap length
+min=10
+
+# Maximum overlap length
+max=50
+
+# Step overlap length
+step=5
+
+
+
+################################################################
+#
+# Define parameters for mapping analysis
+#
+################################################################
+[mappinganlysis]
+
+# Minimum overlap length
+min=10
+
+# Maximum overlap length
+max=50
+
+# Step overlap length
+step=5
 
 
 
