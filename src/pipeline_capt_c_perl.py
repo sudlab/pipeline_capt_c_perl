@@ -654,9 +654,8 @@ def analyzeInteractions(infile, outfile):
     
     out_dir = os.path.dirname(outfile)
     
-    # Getting full directory where it is being executed
-    dir_execution = os.getcwd()
-    
+    # Getting full directory where it is being executed, using the variable in parameters because it fails less
+    dir_execution = PARAMS["workingdir"]
     
     full_perl_script = os.path.join(dir_execution, perl_script_base_name)
     
