@@ -684,6 +684,8 @@ def analyzeInteractions(infile, outfile):
                     -s %(outfile_base)s
                     --pf %(full_dir_execution)s
                     --pu %(out_dir)s;
+                    checkpoint;
+                    touch outfile;
                     '''
     P.run()
     
