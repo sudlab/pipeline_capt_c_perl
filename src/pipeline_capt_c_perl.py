@@ -631,11 +631,13 @@ def linkContigs(infile, outfile):
     P.run()
 
 
+# bowtie.dir/mismatches_default_Overlap_10_Sample_20_IGF0003830.bowtie.sam
+#  mismatches_default_Overlap_10_Sample_20_IGF0003830_experiment_CC3/mismatches_default_Overlap_10_Sample_20_IGF0003830.bowtie_report_CC3.txt
 @follows(mkdir("analysis.dir"), perlDigestGenome, linkContigs)
 @transform(mapReadsWithBowtie,
            regex(".+/(.+).bowtie.sam"),
            add_inputs([formatProbeCoordinates, r""+"".join((os.path.join("perl_digest_genome.dir/", ("%s" % PARAMS["genome"]) + "_dpnII_coordinates.txt")))]),
-           r"analysis.dir/\1_experiment")
+           r"\1_experiment_CC3/\1.bowtie_report_CC3.txt")
 def analyzeInteractions(infile, outfile):
     
     (mapped_RE_reads, [probe_coordinates, digest_genome]) = infile 
